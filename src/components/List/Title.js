@@ -1,4 +1,4 @@
-import React, {useState} from 'react'
+import React, { useState } from 'react'
 import { Typography, InputBase } from '@material-ui/core'
 import MoreHorizIcon from '@material-ui/icons/MoreHoriz'
 import { makeStyles } from '@material-ui/core/styles'
@@ -30,18 +30,24 @@ const useStyle = makeStyles((theme) => ({
 }))
 
 
-export default function Title() {
+export default function Title({title}) {
   const [open, setOpen] = useState(false);
+  const [listTitle, setListTitle] = useState(title);
   const classes = useStyle()
+
+  const onChangeListTitle = (e) => {
+    setListTitle(e.target.value)
+  }
 
   return (
     <div>
       {open ? (
         <div>
-          <InputBase value='todo'
+          <InputBase value={listTitle}
             inputProps={{
               className: classes.input
             }}
+            onChange={onChangeListTitle}
             autoFocus
             fullWidth
             onBlur = {() => setOpen(!open)}
@@ -53,7 +59,7 @@ export default function Title() {
             onClick = {() => setOpen(!open)}
             className = {classes.editableTitle}
             >
-            Todo
+            {title}
           </Typography>
           <MoreHorizIcon />
         </div>
