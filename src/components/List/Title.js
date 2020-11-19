@@ -1,5 +1,6 @@
 import React, {useState} from 'react'
 import { Typography, InputBase } from '@material-ui/core'
+import MoreHorizIcon from '@material-ui/icons/MoreHoriz'
 import { makeStyles } from '@material-ui/core/styles'
 
 const useStyle = makeStyles((theme) => ({
@@ -10,7 +11,8 @@ const useStyle = makeStyles((theme) => ({
   },
   editableTitle: {
     flexGrow: 1,
-    marginTop: '8px',
+    fontSize: '1.2rem',
+    fontWeight: 'bold',
   },
   editableTitleContainer: {
     marginLeft: theme.spacing(1),
@@ -40,6 +42,7 @@ export default function Title() {
             inputProps={{
               className: classes.input
             }}
+            autoFocus
             fullWidth
             onBlur = {() => setOpen(!open)}
           />
@@ -52,7 +55,7 @@ export default function Title() {
             >
             Todo
           </Typography>
-          <div className={classes.options}>&middot;&middot;&middot;</div>
+          <MoreHorizIcon />
         </div>
         )
       }
