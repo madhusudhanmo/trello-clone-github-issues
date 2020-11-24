@@ -19,6 +19,7 @@ const useStyle = makeStyles((theme) => ({
 
 export default function List({list, index}) {
   const classes = useStyle()
+  const cards = []
   return (
     <Draggable draggableId={list.id} index={index}>
       {(provided) => (
@@ -29,8 +30,11 @@ export default function List({list, index}) {
             <Droppable droppableId={list.id}>
               {(provided) => (
                 <div ref={provided.innerRef} {...provided.droppableProps} className={classes.cardContainer}>
-                  {list.cards.map((card, index) => {
-                    return <Card card={card} key={card.id} index={index}/>
+                  {Object.values(list.cards).forEach(function(cards) {
+                    {Object.values(cards).forEach(function(card, index) {
+                      console.log(card)
+                      return <Card card={card} key={card.id} index={index}/>
+                    })}
                   })}
                   {provided.placeholder}
                 </div>

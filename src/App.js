@@ -6,6 +6,8 @@ import store from './utils/store';
 import StoreApi from './utils/storeApi';
 import { makeStyles } from '@material-ui/core/styles';
 import InputContainer from './components/Input/InputContainer';
+import gql from 'graphql-tag';
+import { Query, Mutation } from 'react-apollo';
 
 const useStyle = makeStyles((theme) => ({
   listContainer: {
@@ -14,27 +16,26 @@ const useStyle = makeStyles((theme) => ({
     background: '#316FC2',
     overflowY: 'auto',
   }
-
 }))
 
 function App() {
   const classes = useStyle()
-  const [data, setData] = useState(store)
+  const [jsonData, setJsonData] = useState(store)
 
   const addMoreCard = (title, listId) => {
     const newCard = {id: uuid(), title}
-    const list = data.lists[listId]
+    const list = jsonData.lists[listId]
     list.cards = [...list.cards, newCard]
 
     const newState = {
-      ...data,
+      ...jsonData,
       lists: {
-        ...data.lists,
+        ...jsonData.lists,
         [listId]: list,
       }
     };
 
-    setData(newState)
+    // setJsonData(newState)
   }
 
   const addMoreList = (title) => {
@@ -46,11 +47,11 @@ function App() {
     }
     // console.log()
     const newState = {
-      listIds: [...data.listIds, newUuid],
-      lists: {...data.lists, [newUuid]: newList}
+      listIds: [...jsonData.listIds, newUuid],
+      lists: {...jsonData.lists, [newUuid]: newList}
     }
 
-    setData(newState)
+    setJsonData(newState)
   }
 
   const onDragEnd = (result) => {
@@ -58,14 +59,14 @@ function App() {
     if (!destination) return;
 
     if(type === 'list'){
-      const newListIds = data.listIds
+      const newListIds = jsonData.listIds
       newListIds.splice(source.index, 1);
       newListIds.splice(destination.index, 0, draggableId);
       return
     }
 
-    const sourceList = data.lists[source.droppableId];
-    const destinationList = data.lists[destination.droppableId];
+    const sourceList = jsonData.lists[source.droppableId];
+    const destinationList = jsonData.lists[destination.droppableId];
     const draggingCard = sourceList.cards.filter(
       (card) => (card.id === draggableId)
     )[0]
@@ -75,51 +76,109 @@ function App() {
       destinationList.cards.splice(destination.index, 0, draggingCard)
 
       const newState = {
-        ...data,
+        ...jsonData,
         lists: {
-          ...data.lists,
+          ...jsonData.lists,
           [sourceList.id]: destinationList,
         }
       }
-      setData(newState);
+      setJsonData(newState);
     }
     else{
       sourceList.cards.splice(source.index, 1);
       destinationList.cards.splice(destination.index, 0, draggingCard)
 
       const newState = {
-        ...data,
+        ...jsonData,
         lists: {
-          ...data.lists,
+          ...jsonData.lists,
           [sourceList.id]: sourceList,
           [destinationList.id]: destinationList
         }
       }
-      setData(newState);
+      setJsonData(newState);
     }
   }
 
+  const GET_ISSUES_OF_REPOSITORY = gql`
+    {
+      repository(owner:"madhusudhanmo", name:"trello-clone-github-issues") {
+        issues(last:20) {
+          edges {
+            node {
+              id
+              title
+              url
+              state
+              labels(first:5) {
+                edges {
+                  node {
+                    name
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+
   return (
-    <StoreApi.Provider value={{ addMoreCard, addMoreList }}>
-      <DragDropContext onDragEnd={onDragEnd}>
-        <Droppable droppableId="app" type="list" direction="horizontal">
-          {(provided) => (
-            <div
-              className={classes.listContainer}
-              ref={provided.innerRef}
-              {...provided.droppableProps}
-            >
-              {data.listIds.map((listId, index) => {
-                const list = data.lists[listId];
-                return <List list={list} key={listId} index={index} />;
-              })}
-              <InputContainer type="list" />
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>
-    </StoreApi.Provider>
+    <Query query={GET_ISSUES_OF_REPOSITORY}>
+      {({ data: { repository }, loading }) => {
+        if (loading || !repository) {
+          return <div>Loading ...</div>;
+        }
+
+        const {issues: {edges} } = repository
+        const cards = []
+        Object.values(repository.issues.edges).forEach(function(value) {
+        // console.log(value.node)
+          cards.push(value.node)
+        });
+        // console.log(cards)
+        const openlist = jsonData.lists["list-1"]
+        const closedlist = jsonData.lists["list-2"]
+        openlist.cards = [...openlist.cards, cards.filter((edge) => edge.state === 'OPEN')]
+        closedlist.cards = [...closedlist.cards, cards.filter((edge) => edge.state === 'CLOSED')]
+
+        const newState = {
+        ...jsonData,
+        lists: {
+          ...jsonData.lists,
+          [openlist.id]: openlist,
+          [closedlist.id]: closedlist
+        }
+
+      }
+
+
+
+        return (
+          <StoreApi.Provider value={{ addMoreCard, addMoreList }}>
+            <DragDropContext onDragEnd={onDragEnd}>
+              <Droppable droppableId="app" type="list" direction="horizontal">
+                {(provided) => (
+                  <div
+                    className={classes.listContainer}
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                  >
+                    {newState.listIds.map((listId, index) => {
+                      const list = newState.lists[listId];
+                      return <List list={list} key={listId} index={index} />;
+                    })}
+                    <InputContainer type="list" />
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
+          </StoreApi.Provider>
+        )
+      }}
+    </Query>
   );
 }
 

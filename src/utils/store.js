@@ -16,12 +16,12 @@ const data = {
   lists: {
     'list-1': {
       id: 'list-1',
-      title: 'Todo',
-      cards: cards,
+      title: 'Open',
+      cards: [],
     },
     'list-2': {
       id: 'list-2',
-      title: 'Doing',
+      title: 'Closed',
       cards: [],
     }
   },
